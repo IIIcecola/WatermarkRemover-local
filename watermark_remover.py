@@ -31,7 +31,7 @@ class WatermarkDetector:
 
         return video_clip.get_frame(0)
     
-    def select_roi(self, video_clip, args):
+    def select_roi(self, video_clip):
         if self.roi is not None:
             return self.roi
         

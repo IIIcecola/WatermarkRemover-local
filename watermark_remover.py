@@ -14,11 +14,11 @@ import numpy as np
 import torch
 
 class WatermarkDetector:
-    def __init__(self, num_sample_frames=10, min_frame_count=7, dilation_kernel_size=5):
+    def __init__(self, num_sample_frames=10, min_frame_count=7, dilation_kernel_size=5， roi=None):
         self.num_sample_frames = num_sample_frames
         self.min_frame_count = min_frame_count
         self.dilation_kernel_size = dilation_kernel_size
-        self.roi = None
+        self.roi = roi
     
     def get_first_valid_frame(self, video_clip, threshold=10):
         total_frames = int(video_clip.fps * video_clip.duration)
@@ -31,7 +31,10 @@ class WatermarkDetector:
 
         return video_clip.get_frame(0)
     
-    def select_roi(self, video_clip):
+    def select_roi(self, video_clip, args):
+        if self.roi is not None:
+            return self.roi
+        
         frame = self.get_first_valid_frame(video_clip)
         frame = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
 
@@ -275,10 +278,21 @@ def parse_args():
     parser.add_argument("--input", "-i", type=str, default=".", help="Input directory containing videos")
     parser.add_argument("--output", "-o", type=str, default="output", help="Output directory")
     parser.add_argument("--preview", "-p", action="store_true", help="Preview effect before processing")
+    parser.add_argument("--roi-x", type=int, help="left-top-correlation of ROI")
+    parser.add_argument("--roi-y", type=int, help="left-top-correlation of ROI")
+    parser.add_argument("--roi-width", type=int, help="width of ROI")
+    parser.add_argument("--roi-hight", type=int, help="hight of ROI")
     return parser.parse_args()
 
 if __name__ == "__main__":
     args = parse_args()
+    roi = None
+    if any([args.roi_x, args.roi_y, args.roi_width, args.roi_height]):
+        if not all([args.roi_x, args.roi_y, args.roi_width, args.roi_height]):
+            print("Error: --roi-x, --roi-y, --roi-width, --roi-height must be provided together")
+            sys.exit(1)
+        roi = (args.roi_x, args.roi_y, args.roi_width, args.roi_height)
+        print(f"Using command line ROI: {roi}")
     
     input_dir = args.input
     output_dir = args.output
@@ -307,7 +321,7 @@ if __name__ == "__main__":
         print(f"No valid video files found in {input_dir}")
         sys.exit(1)
     
-    watermark_detector = WatermarkDetector()
+    watermark_detector = WatermarkDetector(roi=roi)
     watermark_mask = None
     
     lama_model, lama_config = initialize_lama(device=use_device)

@@ -72,7 +72,11 @@ class WatermarkDetector:
     def generate_mask(self, video_clip):
         if self.roi is None:
             self.select_roi(video_clip)
-            
+
+        # mask = np.zeros((video_clip.h, video_clip.w), dtype=np.uint8)
+        # x, y, w, h = self.roi
+        # mask[y:y+h, x:x+w] = 255
+        
         total_frames = int(video_clip.duration * video_clip.fps)
         frame_indices = [int(i * total_frames / self.num_sample_frames) for i in range(self.num_sample_frames)]
         frames = [video_clip.get_frame(idx / video_clip.fps) for idx in frame_indices]
